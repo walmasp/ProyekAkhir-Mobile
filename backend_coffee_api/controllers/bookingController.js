@@ -2,11 +2,10 @@ const db = require('../config/database');
 
 // --- BUAT BOOKING BARU (Untuk Pelanggan) ---
 exports.createBooking = (req, res) => {
-    // Ambil user_id dari tiket/token JWT yang login
     const user_id = req.user.id; 
-    const { table_id, tanggal_booking, jam_mulai, jam_selesai } = req.body;
+    // Tambahan: kita menerima cafe_id dari Flutter
+    const { cafe_id, table_id, tanggal_booking, jam_mulai, jam_selesai } = req.body;
 
-    // 1. Cek apakah meja sudah dibooking di tanggal dan jam yang beririsan
     const checkQuery = `
         SELECT * FROM bookings 
         WHERE table_id = ? 
@@ -18,25 +17,23 @@ exports.createBooking = (req, res) => {
     db.query(checkQuery, [table_id, tanggal_booking, jam_selesai, jam_mulai], (err, results) => {
         if (err) return res.status(500).json({ error: err.message });
 
-        // Jika hasilnya ada (> 0), berarti meja sudah dibooking orang lain!
         if (results.length > 0) {
-            return res.status(400).json({ message: 'Maaf, meja ini sudah dibooking pada jam tersebut. Silakan pilih jam atau meja lain.' });
+            return res.status(400).json({ message: 'Maaf, meja ini sudah dibooking pada jam tersebut.' });
         }
 
-        // 2. Jika meja kosong, buat Kode Unik untuk QR Code (Contoh: BK-168123456)
         const qr_code = 'BK-' + Date.now();
 
-        // 3. Simpan data booking ke database
+        // Tambahkan cafe_id di query INSERT
         const insertQuery = `
-            INSERT INTO bookings (user_id, table_id, tanggal_booking, jam_mulai, jam_selesai, qr_code) 
-            VALUES (?, ?, ?, ?, ?, ?)
+            INSERT INTO bookings (user_id, cafe_id, table_id, tanggal_booking, jam_mulai, jam_selesai, qr_code) 
+            VALUES (?, ?, ?, ?, ?, ?, ?)
         `;
 
-        db.query(insertQuery, [user_id, table_id, tanggal_booking, jam_mulai, jam_selesai, qr_code], (err, result) => {
+        db.query(insertQuery, [user_id, cafe_id, table_id, tanggal_booking, jam_mulai, jam_selesai, qr_code], (err, result) => {
             if (err) return res.status(500).json({ error: err.message });
             
             res.status(201).json({ 
-                message: 'Booking berhasil! Silakan selesaikan pembayaran.',
+                message: 'Booking berhasil!',
                 booking_id: result.insertId,
                 qr_code: qr_code
             });
@@ -72,12 +69,13 @@ exports.getMyBookings = (req, res) => {
 
 // --- LIHAT SEMUA BOOKING (Hari ini / Semua) ---
 exports.getAllBookings = (req, res) => {
-    // Gabungkan 3 tabel: bookings, users (buat tahu nama pelanggan), dan tables (nomor meja)
+    // Tambahkan JOIN ke tabel cafe biar admin tau ini pesanan cafe mana
     const query = `
-        SELECT b.*, u.nama AS nama_pelanggan, t.nomor_meja 
+        SELECT b.*, u.nama AS nama_pelanggan, t.nomor_meja, c.nama_cafe 
         FROM bookings b
         JOIN users u ON b.user_id = u.id
         JOIN tables t ON b.table_id = t.id
+        JOIN cafe c ON b.cafe_id = c.id
         ORDER BY b.tanggal_booking DESC, b.jam_mulai ASC
     `;
 
