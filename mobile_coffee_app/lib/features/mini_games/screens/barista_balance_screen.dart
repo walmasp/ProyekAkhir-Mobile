@@ -21,7 +21,10 @@ class _BaristaBalanceScreenState extends State<BaristaBalanceScreen> {
   // Variabel Sensor
   double _x = 0.0;
   double _y = 0.0;
-  final double _threshold = 3.0; // Batas kemiringan sebelum kopi tumpah
+
+  // Batas kemiringan dibuat agak besar (4.5) karena saat HP dipegang berdiri,
+  // tangan kita lebih gampang goyang ke depan/belakang secara tidak sadar
+  final double _threshold = 4.5;
 
   @override
   void dispose() {
@@ -49,12 +52,13 @@ class _BaristaBalanceScreenState extends State<BaristaBalanceScreen> {
       }
     });
 
-    // 2. Mulai Membaca Sensor Accelerometer
+    // 2. Mulai Membaca Sensor Accelerometer (VERSI VERTIKAL)
     _sensorSubscription = accelerometerEventStream().listen((event) {
       if (_isPlaying) {
         setState(() {
-          _x = event.x;
-          _y = event.y;
+          _x = event.x; // Membaca miring Kiri / Kanan
+          _y = event
+              .z; // Menggunakan Z untuk membaca miring Depan / Belakang (saat HP berdiri)
         });
 
         // 3. Logika Kopi Tumpah (Cek Threshold)
@@ -132,6 +136,7 @@ class _BaristaBalanceScreenState extends State<BaristaBalanceScreen> {
         title: const Text("Barista Balance"),
         backgroundColor: Colors.brown,
         foregroundColor: Colors.white,
+        centerTitle: true,
       ),
       body: Center(
         child: Column(
@@ -140,7 +145,7 @@ class _BaristaBalanceScreenState extends State<BaristaBalanceScreen> {
             // Status Teks
             Text(
               _isPlaying
-                  ? "Tahan HP kamu tetap datar!"
+                  ? "Pegang HP-mu tegak lurus!"
                   : _isGameOver
                   ? "Yah, kopinya tumpah! 😭"
                   : "Siap jadi Barista?",
@@ -159,7 +164,7 @@ class _BaristaBalanceScreenState extends State<BaristaBalanceScreen> {
             ),
             const SizedBox(height: 40),
 
-            // Animasi Kopi Sederhana (Bergerak sesuai sumbu X dan Y)
+            // Animasi Kopi Sederhana (Bergerak sesuai sumbu X dan Z)
             Container(
               width: 150,
               height: 150,
@@ -168,7 +173,7 @@ class _BaristaBalanceScreenState extends State<BaristaBalanceScreen> {
                 shape: BoxShape.circle,
               ),
               child: Transform.translate(
-                // Membalikkan arah visual agar terasa seperti cairan
+                // Mengatur visual efek gerakan agar terasa pas dengan kemiringan
                 offset: Offset(_x * -15, _y * 15),
                 child: Icon(
                   _isGameOver ? Icons.water_drop : Icons.local_cafe,

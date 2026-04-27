@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-// Pastikan path import ini sesuai dengan lokasi file barista_balance_screen.dart milikmu
-import 'features/mini_games/screens/barista_balance_screen.dart';
+// Import halaman Login sebagai pintu masuk utama
+import 'features/auth/screens/login_screen.dart';
 
 void main() {
   runApp(const MainApp());
@@ -11,11 +11,17 @@ class MainApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const MaterialApp(
+    return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'Cafe Aggregator',
-      // Home langsung kita arahkan ke game untuk diuji coba
-      home: BaristaBalanceScreen(),
+      theme: ThemeData(
+        // Kita set tema utama ke warna Cokelat (Brown) agar sesuai tema Cafe
+        primarySwatch: Colors.brown,
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.brown),
+        useMaterial3: true,
+      ),
+      // Halaman pertama yang muncul adalah LoginScreen
+      home: const LoginScreen(),
     );
   }
 }
